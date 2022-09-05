@@ -7,8 +7,21 @@ const todos = [
 ];
 
 const server = http.createServer((req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.setHeader("X-Powered-By", "Node.js");
+  res.writeHead(200, {
+    "Content-Type": "application/json",
+    "X-Powered-By": "Node.js",
+  });
+
+  let body = [];
+  req
+    .on("data", (chunk) => {
+      body.push(chunk);
+    })
+    .on("end", () => {
+      body = Buffer.concat(body);
+      console.log(body);
+    });
+
   res.end(
     JSON.stringify({
       success: true,
@@ -17,6 +30,6 @@ const server = http.createServer((req, res) => {
   );
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
