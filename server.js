@@ -1,5 +1,6 @@
 const dotenv = require("dotenv");
 const express = require("express");
+const color = require("colors");
 const logger = require("./middleware/logger");
 const connectDB = require("./Config/db");
 
@@ -23,7 +24,9 @@ const PORT = process.env.PORT;
 
 const server = app.listen(
   PORT,
-  console.log(`Server running on ${process.env.NODE_ENV} on port ${PORT}`)
+  console.log(
+    `Server running on ${process.env.NODE_ENV} on port ${PORT}`.cyan.bold.underline
+  )
 );
 
 //Handle unhandled promise rejection
