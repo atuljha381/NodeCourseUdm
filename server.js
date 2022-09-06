@@ -15,6 +15,9 @@ const bootcamps = require("./routes/bootcamp");
 
 const app = express();
 
+//Body Parser
+app.use(express.json())
+
 app.use(logger);
 
 //Mount Routers
