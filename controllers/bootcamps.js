@@ -2,23 +2,73 @@ const Bootcamp = require("../models/Bootcamp");
 const ErrorResponse = require("../utils/errorResponse");
 const asyncHandler = require("../middleware/async");
 const geocoder = require("../utils/geocode");
+const { remove } = require("../models/Bootcamp");
 
 //@desc     Get all bootcamps
 //@route    GET api/v1/bootcamps
 //@access   Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
   let query;
-  let queryStr = JSON.stringify(req.query);
+  //Copy req Query
+  const reqQuery = { ...req.query };
+
+  //Fields to exclude
+  const removeFields = ["select"];
+
+  //Loop over remove fields and remove them from reqQuery
+  removeFields.forEach((params) => delete reqQuery[params]);
+  // console.log(reqQuery);
+
+  //Create Query String
+  let queryStr = JSON.stringify(reqQuery);
+
+  //Check for operators ($gt,$gte,$lte etc)
   queryStr = queryStr.replace(
     /\b(gt|gte|lt|lte|in)\b/g,
     (match) => `$${match}`
   );
   query = Bootcamp.find(JSON.parse(queryStr));
+
+  //Select fields
+  if (req.query.select) {
+    const field = req.query.select.split(",").join(" ");
+    query = query.select(field);
+  }
+
+  //Sort Fields
+  if (req.query.sort) {
+    const sortBy = req.query.sort.split(",").join(" ");
+    query = query.sort(sortBy);
+  } else {
+    query = query.sort("-createdAt");
+  }
+
+  //Pagination
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 1;
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+  const total = await Bootcamp.countDocuments();
+  query = query.skip(startIndex).limit(limit);
+
+  //Execute Query
   const bootcamp = await query;
-   
-  res
-    .status(201)
-    .json({ success: true, count: bootcamp.length, data: bootcamp });
+
+  //Pagination Result
+  const pagination = {};
+  if (endIndex < total) {
+    pagination.next = { page: page + 1, limit };
+  }
+  if (startIndex > 0) {
+    pagination.prev = { page: page - 1, limit };
+  }
+
+  res.status(201).json({
+    success: true,
+    count: bootcamp.length,
+    pagination,
+    data: bootcamp,
+  });
 });
 
 //@desc     Get single bootcamp
